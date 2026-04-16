@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { DEMO_IDS } from "@/lib/demo-constants";
+import { createCompletedNotification } from "@/lib/notification-service";
 import { prisma } from "@/lib/prisma";
-import { readJsonRecord, readOptionalString } from "@/lib/request-validation";
+import { isAllowedValue, readJsonRecord, readOptionalString } from "@/lib/request-validation";
 
 /**
  * CHALLENGE: NOTIFICATION SYSTEM
@@ -13,23 +14,68 @@ import { readJsonRecord, readOptionalString } from "@/lib/request-validation";
  */
 
 export async function POST(req: Request) {
-  try {
-    const body = await readJsonRecord(req);
-    const scanId = readOptionalString(body.scanId) ?? DEMO_IDS.scanId;
-    const status = readOptionalString(body.status);
+  let body: Record<string, unknown>;
 
-    if (status === "completed" && prisma) {
-      // TODO: Implement the notification creation logic here
-      // example: await prisma.notification.create({ ... })
-      
-      console.log(`[STUB] Notification triggered for scan ${scanId}`);
-      
-      return NextResponse.json({ ok: true, message: "Notification triggered" });
+  try {
+    body = await readJsonRecord(req);
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  try {
+    const scanId = readOptionalString(body.scanId);
+    const status = readOptionalString(body.status);
+    const userId = readOptionalString(body.userId) ?? readOptionalString(body.clinicUserId) ?? DEMO_IDS.clinicUserId;
+
+    if (!scanId) {
+      return NextResponse.json({ ok: false, error: "scanId is required" }, { status: 400 });
     }
 
-    return NextResponse.json({ ok: true });
+    if (!isAllowedValue(status, ["pending", "completed", "failed"] as const)) {
+      return NextResponse.json(
+        { ok: false, error: "status must be one of: pending, completed, failed" },
+        { status: 400 }
+      );
+    }
+
+    if (status !== "completed") {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: `Notification not created for status '${status}'`,
+      });
+    }
+
+    const existingScan = await prisma.scan.findUnique({
+      where: { id: scanId },
+      select: { id: true },
+    });
+
+    if (!existingScan) {
+      return NextResponse.json({ ok: false, error: "Scan not found" }, { status: 404 });
+    }
+
+    const { notification, created } = await createCompletedNotification({
+      scanId,
+      userId,
+    });
+
+    console.log(`[STUB] Notification dispatch simulated for scan ${scanId}`);
+
+    return NextResponse.json({
+      ok: true,
+      created,
+      notification: {
+        id: notification.id,
+        userId: notification.userId,
+        title: notification.title,
+        message: notification.message,
+        read: notification.read,
+        createdAt: notification.createdAt,
+      },
+    }, { status: created ? 201 : 200 });
   } catch (err) {
     console.error("Notification API Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Failed to create notification" }, { status: 500 });
   }
 }

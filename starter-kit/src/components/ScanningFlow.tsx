@@ -15,7 +15,7 @@ import {
   CameraStateOverlay,
   CaptureControl,
   ReadyCameraOverlay,
-  ScanCompleteState,
+  ScanFinalizationState,
   ScanningHeader,
   ThumbnailStrip,
 } from "@/components/scanning-flow/ui";
@@ -39,6 +39,7 @@ export default function ScanningFlow() {
   const rafRef = useRef<number | null>(null);
   const lastSampleTimeRef = useRef(0);
   const mountedRef = useRef(false);
+  const finalizationStartedRef = useRef(false);
   const qualityBucketRef = useRef<QualityBucket>("fair");
   const qualityTextRef = useRef("Align your mouth inside the guide.");
 
@@ -48,6 +49,8 @@ export default function ScanningFlow() {
   const [currentStep, setCurrentStep] = useState(0);
   const [qualityBucket, setQualityBucket] = useState<QualityBucket>("fair");
   const [qualityText, setQualityText] = useState("Align your mouth inside the guide.");
+  const [finalizationStatus, setFinalizationStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [finalizationMessage, setFinalizationMessage] = useState("Preparing scan finalization...");
 
   const isComplete = currentStep >= SCAN_VIEWS.length;
   const activeStep = Math.min(currentStep, SCAN_VIEWS.length - 1);
@@ -333,6 +336,65 @@ export default function ScanningFlow() {
     setCurrentStep((prev) => Math.min(prev + 1, SCAN_VIEWS.length));
   }, [canCapture]);
 
+  const finalizeScan = useCallback(async () => {
+    if (finalizationStatus === "submitting") {
+      return;
+    }
+
+    if (capturedImages.length < SCAN_VIEWS.length) {
+      return;
+    }
+
+    finalizationStartedRef.current = true;
+    setFinalizationStatus("submitting");
+    setFinalizationMessage("Finalizing scan...");
+
+    try {
+      const response = await fetch("/api/scans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "completed",
+          images: capturedImages,
+        }),
+      });
+
+      const payload = (await response.json()) as { ok?: boolean; error?: string; scan?: { id?: string } };
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error ?? "Unable to finalize scan");
+      }
+
+      setFinalizationStatus("success");
+      setFinalizationMessage(
+        payload.scan?.id ? `Scan finalized (${payload.scan.id}). Clinic notified.` : "Scan finalized. Clinic notified."
+      );
+    } catch (error) {
+      console.error("Scan finalization failed", error);
+      finalizationStartedRef.current = false;
+      setFinalizationStatus("error");
+      setFinalizationMessage(error instanceof Error ? error.message : "Failed to finalize scan");
+    }
+  }, [capturedImages, finalizationStatus]);
+
+  useEffect(() => {
+    if (!isComplete) {
+      return;
+    }
+
+    if (capturedImages.length < SCAN_VIEWS.length) {
+      return;
+    }
+
+    if (finalizationStartedRef.current || finalizationStatus !== "idle") {
+      return;
+    }
+
+    void finalizeScan();
+  }, [capturedImages.length, finalizeScan, finalizationStatus, isComplete]);
+
   return (
     <div className="flex flex-col items-center bg-black min-h-screen text-white">
       <ScanningHeader isComplete={isComplete} currentStep={currentStep} totalSteps={SCAN_VIEWS.length} />
@@ -370,7 +432,14 @@ export default function ScanningFlow() {
             )}
           </>
         ) : (
-          <ScanCompleteState totalSteps={SCAN_VIEWS.length} />
+          <ScanFinalizationState
+            totalSteps={SCAN_VIEWS.length}
+            status={finalizationStatus}
+            message={finalizationMessage}
+            onRetry={() => {
+              void finalizeScan();
+            }}
+          />
         )}
       </div>
 

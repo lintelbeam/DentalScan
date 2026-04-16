@@ -99,6 +99,45 @@ export function ScanCompleteState({ totalSteps }: { totalSteps: number }) {
   );
 }
 
+export function ScanFinalizationState({
+  totalSteps,
+  status,
+  message,
+  onRetry,
+}: {
+  totalSteps: number;
+  status: "idle" | "submitting" | "success" | "error";
+  message: string;
+  onRetry: () => void;
+}) {
+  const isLoading = status === "submitting";
+  const isError = status === "error";
+
+  return (
+    <div className="text-center p-10">
+      <CheckCircle2 size={48} className="text-green-500 mx-auto mb-4" />
+      <h2 className="text-xl font-bold">Scan Complete</h2>
+      <p className="text-zinc-400 mt-2">All {totalSteps} angles captured successfully.</p>
+      <p className={`text-sm mt-3 ${isError ? "text-red-300" : "text-zinc-300"}`}>{message}</p>
+      {(isLoading || isError) && (
+        <div className="mt-4">
+          {isLoading ? (
+            <RefreshCw className="mx-auto animate-spin text-zinc-300" />
+          ) : (
+            <button
+              onClick={onRetry}
+              className="inline-flex items-center gap-2 rounded-md border border-zinc-500 px-3 py-2 text-sm hover:bg-zinc-800 transition-colors"
+            >
+              <RefreshCw size={14} />
+              Retry Finalization
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CaptureControl({
   canCapture,
   viewLabel,

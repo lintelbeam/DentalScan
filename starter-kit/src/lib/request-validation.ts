@@ -24,3 +24,15 @@ export function isAllowedValue<T extends readonly string[]>(
 ): value is T[number] {
   return Boolean(value) && allowedValues.includes(value as T[number]);
 }
+
+export function readStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const normalized = value
+    .map((entry) => readOptionalString(entry))
+    .filter((entry): entry is string => Boolean(entry));
+
+  return normalized.length > 0 ? normalized : undefined;
+}
