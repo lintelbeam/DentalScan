@@ -42,6 +42,37 @@ If you prefer running everything in Docker from the repository root:
     docker compose down
     ```
 
+## Docker HTTPS (Required For Camera On Public URL)
+
+If you want camera access from a public URL, you must serve the app over HTTPS with a real domain.
+
+1.  **Create HTTPS env file from repo root**:
+    ```bash
+    cp .env.https.example .env.https
+    ```
+    Then set `APP_DOMAIN` to your DNS name (for example `scan.your-domain.com`).
+
+2.  **Point DNS**:
+    Create an `A` record for `APP_DOMAIN` to your server IP.
+
+3.  **Start app + TLS proxy**:
+    ```bash
+    docker compose --env-file .env.https -f docker-compose.yml -f docker-compose.https.yml up --build -d
+    ```
+
+4.  **Open the app**:
+    Navigate to `https://<APP_DOMAIN>`.
+
+5.  **Stop HTTPS stack**:
+    ```bash
+    docker compose --env-file .env.https -f docker-compose.yml -f docker-compose.https.yml down
+    ```
+
+### Important Notes
+
+- Camera APIs are blocked on plain HTTP public IP URLs like `http://207.231.108.58:3000`.
+- Use a valid HTTPS domain URL instead.
+
 ## Project Notes
 
 -   **Database**: The database is located at `prisma/dev.db`. You can explore it using `npx prisma studio`.

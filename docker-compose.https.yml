@@ -1,0 +1,22 @@
+services:
+  dentalscan:
+    ports: []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: dentalscan-caddy
+    depends_on:
+      - dentalscan
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

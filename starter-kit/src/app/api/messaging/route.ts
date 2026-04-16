@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { DEMO_IDS, DEMO_SENDER_VALUES } from "@/lib/demo-constants";
+import { prisma } from "@/lib/prisma";
+import {
+  isAllowedValue,
+  readJsonRecord,
+  readOptionalString,
+} from "@/lib/request-validation";
 
 /**
  * CHALLENGE: MESSAGING SYSTEM
@@ -14,25 +18,36 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const threadId = searchParams.get("threadId");
+  const threadId = readOptionalString(searchParams.get("threadId"));
 
   if (!threadId) {
     return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
   }
 
   // TODO: Fetch messages for this thread
-  const messages = []; // fetch from prisma
+  const messages = [];
+  if (prisma) {
+    // fetch from prisma
+  }
 
   return NextResponse.json({ messages });
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { threadId, content, sender } = body;
+    const body = await readJsonRecord(req);
+    const threadId = readOptionalString(body.threadId) ?? DEMO_IDS.threadId;
+    const content = readOptionalString(body.content);
+    const senderCandidate = readOptionalString(body.sender);
+    const sender = isAllowedValue(senderCandidate, DEMO_SENDER_VALUES)
+      ? senderCandidate
+      : "patient";
 
     // TODO: Save message to database
-    console.log(`[STUB] New message in thread ${threadId}: ${content}`);
+    if (prisma) {
+      // save with prisma
+    }
+    console.log(`[STUB] New message in thread ${threadId}: ${content ?? "(empty)"} (${sender})`);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
