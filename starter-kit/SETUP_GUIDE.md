@@ -25,6 +25,23 @@ Follow these steps to get the project running in under 2 minutes:
 4.  **Open the App**:
     Navigate to [http://localhost:3000](http://localhost:3000) to see the Scanning Flow in action.
 
+## Docker Quick Start
+
+If you prefer running everything in Docker from the repository root:
+
+1.  **Build and Start**:
+    ```bash
+    docker compose up --build
+    ```
+
+2.  **Open the App**:
+    Navigate to [http://localhost:3000](http://localhost:3000).
+
+3.  **Stop Containers**:
+    ```bash
+    docker compose down
+    ```
+
 ## Project Notes
 
 -   **Database**: The database is located at `prisma/dev.db`. You can explore it using `npx prisma studio`.
