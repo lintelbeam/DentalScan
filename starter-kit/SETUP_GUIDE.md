@@ -73,7 +73,7 @@ If you want camera access from a public URL, you must serve the app over HTTPS w
 
 ### Important Notes
 
-- Camera APIs are blocked on plain HTTP public IP URLs like `http://207.231.108.58:3000`.
+- Camera APIs are blocked on plain HTTP public IP URLs like `http://localhost:3000`.
 - Use a valid HTTPS domain URL instead.
 
 ## Project Notes

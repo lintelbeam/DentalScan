@@ -76,7 +76,6 @@ npm run build
 ## QA and Demo Docs
 
 - Manual validation checklist: [QA_CHECKLIST.md](./QA_CHECKLIST.md)
-- 2-minute demo outline: [LOOM_TALK_TRACK.md](./LOOM_TALK_TRACK.md)
 - Product audit worksheet template: [AUDIT.md](./AUDIT.md)
 
 ## Known Limitations
