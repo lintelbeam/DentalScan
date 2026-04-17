@@ -420,12 +420,12 @@ export default function ScanningFlow() {
   }, [capturedImages.length, finalizeScan, finalizationStatus, isComplete]);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#eef8ff] via-white to-[#f8fbff] text-slate-900">
       <ScanningHeader isComplete={isComplete} currentStep={currentStep} totalSteps={SCAN_VIEWS.length} />
 
-      <div className="mx-auto flex w-full max-w-[433px] flex-col items-center">
+      <div className="mx-auto flex w-full max-w-[433px] flex-col items-center px-3">
         {/* Main Viewport */}
-        <div className="relative mt-5 w-full aspect-[3/4] bg-zinc-950 overflow-hidden flex items-center justify-center">
+        <div className="relative mt-5 flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-xl shadow-sky-100/60">
           {!isComplete ? (
             <>
               <video
@@ -433,7 +433,7 @@ export default function ScanningFlow() {
                 autoPlay
                 playsInline
                 muted
-                className={`w-full h-full object-cover transition-opacity ${
+                className={`h-full w-full object-cover transition-opacity ${
                   cameraState === "ready" ? "opacity-100" : "opacity-0"
                 }`}
               />
@@ -470,7 +470,7 @@ export default function ScanningFlow() {
         </div>
 
         {/* Controls */}
-        <div className="p-10 w-full flex justify-center">
+        <div className="flex w-full justify-center py-7">
           {!isComplete && (
             <CaptureControl canCapture={canCapture} viewLabel={SCAN_VIEWS[activeStep].label} onCapture={handleCapture} />
           )}

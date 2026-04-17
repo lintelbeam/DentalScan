@@ -15,14 +15,14 @@ export function ScanningHeader({
   totalSteps: number;
 }) {
   return (
-    <div className="w-full bg-zinc-900 border-b border-zinc-800">
-      <div className="mx-auto flex w-full max-w-[1092px] items-center justify-between p-[10px]">
+    <header className="w-full border-b border-sky-100/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+      <div className="mx-auto flex w-full max-w-[1092px] items-center justify-between px-[10px] py-[10px]">
         <Image src={logo} alt="DentalScan" className="h-[44px] w-auto" priority />
-        <span className="text-xs text-zinc-500">
+        <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
           {isComplete ? "Scan Complete" : `Step ${currentStep + 1}/${totalSteps}`}
         </span>
       </div>
-    </div>
+    </header>
   );
 }
 
@@ -37,23 +37,23 @@ export function ReadyCameraOverlay({
 }) {
   return (
     <>
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/30" />
         <div
-          className={`absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[58%] max-w-[280px] aspect-[1.7/1] rounded-[9999px] border-4 ${QUALITY_STYLES[qualityBucket].border} ring-8 ${QUALITY_STYLES[qualityBucket].ring} shadow-[0_0_24px_rgba(0,0,0,0.35)]`}
+          className={`absolute left-1/2 top-[58%] aspect-[1.7/1] w-[58%] max-w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-[9999px] border-4 ${QUALITY_STYLES[qualityBucket].border} ring-8 ${QUALITY_STYLES[qualityBucket].ring} shadow-[0_0_28px_rgba(15,23,42,0.25)]`}
         >
-          <div className="absolute inset-[14%] rounded-[9999px] border border-white/35" />
+          <div className="absolute inset-[14%] rounded-[9999px] border border-white/50" />
         </div>
       </div>
 
-      <div className="absolute top-4 left-4 rounded-full bg-black/65 border border-white/20 px-3 py-1.5 flex items-center gap-2">
-        <span className={`w-2.5 h-2.5 rounded-full ${QUALITY_STYLES[qualityBucket].dot}`} />
-        <p className="text-xs font-semibold uppercase tracking-wide">{getQualityLabel(qualityBucket)}</p>
+      <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-sky-100 bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur">
+        <span className={`h-2.5 w-2.5 rounded-full ${QUALITY_STYLES[qualityBucket].dot}`} />
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">{getQualityLabel(qualityBucket)}</p>
       </div>
 
-      <div className="absolute bottom-4 left-3 right-3 rounded-xl bg-black/60 border border-white/10 p-3 text-center">
-        <p className="text-sm font-medium">{instruction}</p>
-        <p className={`text-xs mt-1 ${QUALITY_STYLES[qualityBucket].text}`}>{qualityText}</p>
+      <div className="absolute bottom-4 left-3 right-3 rounded-xl border border-sky-100 bg-white/90 p-3 text-center shadow-sm backdrop-blur">
+        <p className="text-sm font-semibold text-slate-800">{instruction}</p>
+        <p className={`mt-1 text-xs font-medium ${QUALITY_STYLES[qualityBucket].text}`}>{qualityText}</p>
       </div>
     </>
   );
@@ -69,19 +69,19 @@ export function CameraStateOverlay({
   onRetry: () => void;
 }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-6 text-center bg-black/75">
-      <div className="max-w-xs space-y-3">
+    <div className="absolute inset-0 flex items-center justify-center bg-white/78 p-6 text-center backdrop-blur-sm">
+      <div className="w-full max-w-xs space-y-3 rounded-2xl border border-sky-100 bg-white/95 p-5 shadow-lg shadow-sky-100/60">
         {cameraState === "loading" ? (
           <>
-            <RefreshCw className="mx-auto animate-spin text-zinc-300" />
-            <p className="text-sm text-zinc-200">{cameraMessage}</p>
+            <RefreshCw className="mx-auto animate-spin text-sky-600" />
+            <p className="text-sm text-slate-700">{cameraMessage}</p>
           </>
         ) : (
           <>
-            <p className="text-sm text-zinc-200">{cameraMessage}</p>
+            <p className="text-sm text-slate-700">{cameraMessage}</p>
             <button
               onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-500 px-3 py-2 text-sm hover:bg-zinc-800 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-50"
             >
               <RefreshCw size={14} />
               Retry Camera
@@ -95,10 +95,10 @@ export function CameraStateOverlay({
 
 export function ScanCompleteState({ totalSteps }: { totalSteps: number }) {
   return (
-    <div className="text-center p-10">
-      <CheckCircle2 size={48} className="text-green-500 mx-auto mb-4" />
-      <h2 className="text-xl font-bold">Scan Complete</h2>
-      <p className="text-zinc-400 mt-2">All {totalSteps} angles captured successfully.</p>
+    <div className="p-10 text-center">
+      <CheckCircle2 size={48} className="mx-auto mb-4 text-sky-500" />
+      <h2 className="text-xl font-bold text-slate-900">Scan Complete</h2>
+      <p className="mt-2 text-sm text-slate-500">All {totalSteps} angles captured successfully.</p>
     </div>
   );
 }
@@ -122,30 +122,30 @@ export function ScanFinalizationState({
   const showProgress = !isError;
 
   return (
-    <div className="text-center p-10">
-      <CheckCircle2 size={48} className="text-green-500 mx-auto mb-4" />
-      <h2 className="text-xl font-bold">Scan Complete</h2>
-      <p className="text-zinc-400 mt-2">All {totalSteps} angles captured successfully.</p>
-      <p className={`text-sm mt-3 ${isError ? "text-red-300" : "text-zinc-300"}`}>{message}</p>
+    <div className="p-10 text-center">
+      <CheckCircle2 size={48} className="mx-auto mb-4 text-sky-500" />
+      <h2 className="text-xl font-bold text-slate-900">Scan Complete</h2>
+      <p className="mt-2 text-sm text-slate-500">All {totalSteps} angles captured successfully.</p>
+      <p className={`mt-3 text-sm ${isError ? "text-red-600" : "text-slate-700"}`}>{message}</p>
       {showProgress && (
         <div className="mt-4">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800/90">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-sky-100">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-sky-500 via-blue-400 to-emerald-400 transition-all duration-700 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-[#4ebff7] to-[#35a3e8] transition-all duration-700 ease-out"
               style={{ width: `${clampedProgress}%` }}
             />
           </div>
-          <p className="mt-1 text-[11px] text-zinc-400">{Math.round(clampedProgress)}%</p>
+          <p className="mt-1 text-[11px] text-slate-500">{Math.round(clampedProgress)}%</p>
         </div>
       )}
       {(isLoading || isError) && (
         <div className="mt-4">
           {isLoading ? (
-            <RefreshCw className="mx-auto animate-spin text-zinc-300" />
+            <RefreshCw className="mx-auto animate-spin text-sky-600" />
           ) : (
             <button
               onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-500 px-3 py-2 text-sm hover:bg-zinc-800 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-50"
             >
               <RefreshCw size={14} />
               Retry Finalization
@@ -171,16 +171,18 @@ export function CaptureControl({
       onClick={onCapture}
       disabled={!canCapture}
       aria-label={`Capture ${viewLabel}`}
-      className={`w-20 h-20 rounded-full border-4 flex items-center justify-center transition-transform ${
-        canCapture ? "border-white active:scale-90" : "border-zinc-500 cursor-not-allowed opacity-60"
+      className={`flex h-20 w-20 items-center justify-center rounded-full border-4 shadow-lg transition-transform ${
+        canCapture
+          ? "border-sky-300 bg-white active:scale-90"
+          : "cursor-not-allowed border-slate-300 bg-slate-100 opacity-70"
       }`}
     >
       <div
-        className={`w-16 h-16 rounded-full flex items-center justify-center ${
-          canCapture ? "bg-white" : "bg-zinc-500"
+        className={`flex h-16 w-16 items-center justify-center rounded-full ${
+          canCapture ? "bg-gradient-to-r from-[#4ebff7] to-[#35a3e8]" : "bg-slate-300"
         }`}
       >
-        <Camera className={canCapture ? "text-black" : "text-zinc-300"} />
+        <Camera className="text-white" />
       </div>
     </button>
   );
@@ -199,25 +201,25 @@ export function ThumbnailStrip({
 }) {
   return (
     <div className="w-full overflow-x-auto">
-      <div
-        className="mx-auto flex w-max min-w-full justify-center gap-2 p-4"
-        role="list"
-        aria-label="Captured scan thumbnails"
-      >
+      <div className="mx-auto flex w-max min-w-full justify-center gap-2 p-4" role="list" aria-label="Captured scan thumbnails">
         {views.map((view, index) => (
           <div
             key={view.label}
             role="listitem"
             aria-current={!isComplete && index === currentStep ? "step" : undefined}
-            className={`w-16 h-20 rounded border-2 shrink-0 ${
-              !isComplete && index === currentStep ? "border-blue-500 bg-blue-500/10" : "border-zinc-800"
+            className={`h-20 w-16 shrink-0 rounded-lg border-2 bg-white shadow-sm ${
+              !isComplete && index === currentStep ? "border-[#4ebff7]" : "border-sky-100"
             }`}
             title={view.label}
           >
             {capturedImages[index] ? (
-              <img src={capturedImages[index]} alt={`${view.label} capture`} className="w-full h-full object-cover rounded" />
+              <img
+                src={capturedImages[index]}
+                alt={`${view.label} capture`}
+                className="h-full w-full rounded-md object-cover"
+              />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-[10px] text-zinc-600 px-1 text-center">
+              <div className="flex h-full w-full flex-col items-center justify-center px-1 text-center text-[10px] text-slate-500">
                 <span>{index + 1}</span>
                 <span className="mt-0.5">Pending</span>
               </div>

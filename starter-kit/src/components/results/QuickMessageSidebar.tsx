@@ -178,17 +178,17 @@ export default function QuickMessageSidebar({
   );
 
   return (
-    <aside className="w-full rounded-xl border border-zinc-800 bg-zinc-950/95 p-4 text-zinc-100">
+    <aside className="w-full rounded-2xl border border-sky-100 bg-white p-4 text-slate-800 shadow-lg shadow-sky-100/60">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold tracking-wide text-zinc-200">Quick Message</h2>
-        <span className="text-[10px] uppercase tracking-wide text-zinc-500">
+        <h2 className="text-sm font-semibold tracking-wide text-slate-800">Quick Message</h2>
+        <span className="text-[10px] uppercase tracking-wide text-slate-500">
           {thread ? `Thread ${thread.id.slice(0, 8)}` : "No thread yet"}
         </span>
       </div>
 
-      <div className="quick-message-scrollbar mb-3 h-72 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
+      <div className="quick-message-scrollbar mb-3 h-72 overflow-y-auto rounded-xl border border-sky-100 bg-sky-50/40 p-3">
         {historyStatus === "loading" && (
-          <div className="flex h-full items-center justify-center gap-2 text-sm text-zinc-400">
+          <div className="flex h-full items-center justify-center gap-2 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading messages...
           </div>
@@ -196,13 +196,13 @@ export default function QuickMessageSidebar({
 
         {historyStatus === "error" && (
           <div className="space-y-3 text-center">
-            <p className="text-sm text-red-300">{historyError}</p>
+            <p className="text-sm text-red-700">{historyError}</p>
             <button
               type="button"
               onClick={() => {
                 void loadHistory();
               }}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-600 px-3 py-2 text-xs hover:bg-zinc-800"
+              className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs text-sky-700 transition-colors hover:bg-sky-50"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Retry Loading
@@ -211,7 +211,7 @@ export default function QuickMessageSidebar({
         )}
 
         {historyStatus === "ready" && messages.length === 0 && (
-          <div className="flex h-full items-center justify-center text-center text-sm text-zinc-500">
+          <div className="flex h-full items-center justify-center text-center text-sm text-slate-500">
             No messages yet. Ask the clinic a question.
           </div>
         )}
@@ -224,12 +224,14 @@ export default function QuickMessageSidebar({
               return (
                 <li key={message.id} className={`flex ${isPatient ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[82%] rounded-lg px-3 py-2 text-sm ${
-                      isPatient ? "bg-blue-500 text-white" : "bg-zinc-800 text-zinc-100"
+                    className={`max-w-[82%] rounded-xl px-3 py-2 text-sm ${
+                      isPatient
+                        ? "bg-gradient-to-r from-[#4ebff7] to-[#35a3e8] text-white"
+                        : "border border-sky-100 bg-white text-slate-800"
                     } ${message.pending ? "opacity-70" : ""}`}
                   >
                     <p>{message.content}</p>
-                    <p className="mt-1 text-[10px] text-white/80">
+                    <p className={`mt-1 text-[10px] ${isPatient ? "text-white/85" : "text-slate-500"}`}>
                       {new Date(message.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                       {message.pending ? " · sending..." : ""}
                     </p>
@@ -242,7 +244,7 @@ export default function QuickMessageSidebar({
       </div>
 
       {sendStatus === "error" && (
-        <div className="mb-3 rounded-md border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-200">
+        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
           <p>{sendError}</p>
           {retryContent && (
             <button
@@ -250,7 +252,7 @@ export default function QuickMessageSidebar({
               onClick={() => {
                 void sendMessage(retryContent);
               }}
-              className="mt-2 inline-flex items-center gap-1 rounded border border-red-400/60 px-2 py-1 hover:bg-red-500/20"
+              className="mt-2 inline-flex items-center gap-1 rounded border border-red-300 px-2 py-1 transition-colors hover:bg-red-100"
             >
               <RefreshCw className="h-3 w-3" />
               Retry send
@@ -260,7 +262,7 @@ export default function QuickMessageSidebar({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-2">
-        <label htmlFor="quick-message" className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+        <label htmlFor="quick-message" className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Message to clinic
         </label>
         <textarea
@@ -272,16 +274,18 @@ export default function QuickMessageSidebar({
           rows={3}
           aria-describedby="quick-message-shortcuts"
           aria-keyshortcuts="Enter,Control+Enter,Meta+Enter"
-          className="w-full resize-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-blue-500 focus:outline-none"
+          className="w-full resize-none rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#4ebff7] focus:outline-none"
         />
-        <p id="quick-message-shortcuts" className="text-[11px] text-zinc-500">
+        <p id="quick-message-shortcuts" className="text-[11px] text-slate-500">
           Enter sends. Shift+Enter adds a new line. Ctrl+Enter (or Cmd+Enter) also sends.
         </p>
         <button
           type="submit"
           disabled={!canSend}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            canSend ? "bg-blue-500 text-white hover:bg-blue-400" : "cursor-not-allowed bg-zinc-700 text-zinc-400"
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+            canSend
+              ? "bg-gradient-to-r from-[#4ebff7] to-[#35a3e8] text-white hover:from-[#45b5ea] hover:to-[#3098da]"
+              : "cursor-not-allowed bg-slate-200 text-slate-400"
           }`}
         >
           {sendStatus === "sending" ? (

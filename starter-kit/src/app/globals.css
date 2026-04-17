@@ -3,36 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
+  --ds-accent: #4ebff7;
+  --ds-accent-strong: #35a3e8;
+  --foreground-rgb: 17, 24, 39;
+  --background-start-rgb: 245, 250, 255;
+  --background-end-rgb: 255, 255, 255;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  background: linear-gradient(
+    180deg,
+    rgb(var(--background-start-rgb)) 0%,
+    rgb(var(--background-end-rgb)) 55%
+  );
 }
 
 .quick-message-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(59, 130, 246, 0.65) rgba(24, 24, 27, 0.6);
+  scrollbar-color: rgba(78, 191, 247, 0.7) rgba(191, 233, 251, 0.5);
 }
 
 .quick-message-scrollbar::-webkit-scrollbar {
-  width: 10px;
+  width: 9px;
 }
 
 .quick-message-scrollbar::-webkit-scrollbar-track {
-  background: rgba(24, 24, 27, 0.7);
+  background: linear-gradient(180deg, rgba(191, 233, 251, 0.55), rgba(224, 242, 254, 0.6));
   border-radius: 999px;
 }
 
 .quick-message-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(96, 165, 250, 0.9), rgba(59, 130, 246, 0.55));
+  background: linear-gradient(180deg, rgba(78, 191, 247, 0.95), rgba(53, 163, 232, 0.85));
   border-radius: 999px;
-  border: 2px solid rgba(24, 24, 27, 0.9);
+  border: 2px solid rgba(239, 248, 255, 0.9);
 }
 
 .quick-message-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(147, 197, 253, 0.95), rgba(59, 130, 246, 0.75));
+  background: linear-gradient(180deg, rgba(91, 202, 255, 0.95), rgba(53, 163, 232, 0.95));
 }

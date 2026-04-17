@@ -18,22 +18,22 @@ export const GUIDE_RADIUS_Y = 0.19;
 
 export const QUALITY_STYLES: Record<QualityBucket, QualityStyle> = {
   poor: {
-    dot: "bg-red-400",
-    text: "text-red-300",
-    border: "border-red-400/90",
-    ring: "ring-red-500/20",
+    dot: "bg-red-500",
+    text: "text-red-700",
+    border: "border-red-500/90",
+    ring: "ring-red-500/25",
   },
   fair: {
-    dot: "bg-amber-400",
-    text: "text-amber-200",
-    border: "border-amber-400/90",
-    ring: "ring-amber-500/20",
+    dot: "bg-amber-500",
+    text: "text-amber-700",
+    border: "border-amber-500/90",
+    ring: "ring-amber-500/25",
   },
   good: {
-    dot: "bg-emerald-400",
-    text: "text-emerald-200",
-    border: "border-emerald-400/90",
-    ring: "ring-emerald-500/20",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700",
+    border: "border-emerald-500/90",
+    ring: "ring-emerald-500/25",
   },
 };
 
