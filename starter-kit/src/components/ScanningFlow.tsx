@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   GUIDE_CENTER_X,
   GUIDE_CENTER_Y,
@@ -31,6 +32,7 @@ import type { CameraState, QualityBucket } from "@/components/scanning-flow/type
  */
 
 export default function ScanningFlow() {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -40,6 +42,7 @@ export default function ScanningFlow() {
   const lastSampleTimeRef = useRef(0);
   const mountedRef = useRef(false);
   const finalizationStartedRef = useRef(false);
+  const redirectTimeoutRef = useRef<number | null>(null);
   const qualityBucketRef = useRef<QualityBucket>("fair");
   const qualityTextRef = useRef("Align your mouth inside the guide.");
 
@@ -49,8 +52,9 @@ export default function ScanningFlow() {
   const [currentStep, setCurrentStep] = useState(0);
   const [qualityBucket, setQualityBucket] = useState<QualityBucket>("fair");
   const [qualityText, setQualityText] = useState("Align your mouth inside the guide.");
-  const [finalizationStatus, setFinalizationStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [finalizationStatus, setFinalizationStatus] = useState<"idle" | "submitting" | "redirecting" | "success" | "error">("idle");
   const [finalizationMessage, setFinalizationMessage] = useState("Preparing scan finalization...");
+  const [finalizationProgress, setFinalizationProgress] = useState(0);
 
   const isComplete = currentStep >= SCAN_VIEWS.length;
   const activeStep = Math.min(currentStep, SCAN_VIEWS.length - 1);
@@ -65,6 +69,13 @@ export default function ScanningFlow() {
     if (qualityTextRef.current !== nextText) {
       qualityTextRef.current = nextText;
       setQualityText(nextText);
+    }
+  }, []);
+
+  const clearPendingRedirect = useCallback(() => {
+    if (redirectTimeoutRef.current !== null) {
+      window.clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
     }
   }, []);
 
@@ -301,9 +312,10 @@ export default function ScanningFlow() {
 
     return () => {
       mountedRef.current = false;
+      clearPendingRedirect();
       stopCamera();
     };
-  }, [startCamera, stopCamera]);
+  }, [clearPendingRedirect, startCamera, stopCamera]);
 
   useEffect(() => {
     if (isComplete) {
@@ -337,7 +349,7 @@ export default function ScanningFlow() {
   }, [canCapture]);
 
   const finalizeScan = useCallback(async () => {
-    if (finalizationStatus === "submitting") {
+    if (finalizationStatus === "submitting" || finalizationStatus === "redirecting") {
       return;
     }
 
@@ -345,9 +357,11 @@ export default function ScanningFlow() {
       return;
     }
 
+    clearPendingRedirect();
     finalizationStartedRef.current = true;
     setFinalizationStatus("submitting");
     setFinalizationMessage("Finalizing scan...");
+    setFinalizationProgress(22);
 
     try {
       const response = await fetch("/api/scans", {
@@ -368,16 +382,26 @@ export default function ScanningFlow() {
       }
 
       setFinalizationStatus("success");
-      setFinalizationMessage(
-        payload.scan?.id ? `Scan finalized (${payload.scan.id}). Clinic notified.` : "Scan finalized. Clinic notified."
-      );
+      if (payload.scan?.id) {
+        setFinalizationStatus("redirecting");
+        setFinalizationMessage(`Scan finalized (${payload.scan.id}). Opening results...`);
+        setFinalizationProgress(100);
+        redirectTimeoutRef.current = window.setTimeout(() => {
+          router.push(`/results/${encodeURIComponent(payload.scan.id)}`);
+        }, 850);
+      } else {
+        setFinalizationMessage("Scan finalized. Clinic notified.");
+        setFinalizationProgress(100);
+      }
     } catch (error) {
       console.error("Scan finalization failed", error);
+      clearPendingRedirect();
       finalizationStartedRef.current = false;
       setFinalizationStatus("error");
       setFinalizationMessage(error instanceof Error ? error.message : "Failed to finalize scan");
+      setFinalizationProgress(0);
     }
-  }, [capturedImages, finalizationStatus]);
+  }, [capturedImages, clearPendingRedirect, finalizationStatus, router]);
 
   useEffect(() => {
     if (!isComplete) {
@@ -396,61 +420,64 @@ export default function ScanningFlow() {
   }, [capturedImages.length, finalizeScan, finalizationStatus, isComplete]);
 
   return (
-    <div className="flex flex-col items-center bg-black min-h-screen text-white">
+    <div className="min-h-screen bg-black text-white">
       <ScanningHeader isComplete={isComplete} currentStep={currentStep} totalSteps={SCAN_VIEWS.length} />
 
-      {/* Main Viewport */}
-      <div className="relative w-full max-w-md aspect-[3/4] bg-zinc-950 overflow-hidden flex items-center justify-center">
-        {!isComplete ? (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={`w-full h-full object-cover transition-opacity ${
-                cameraState === "ready" ? "opacity-100" : "opacity-0"
-              }`}
+      <div className="mx-auto flex w-full max-w-[433px] flex-col items-center">
+        {/* Main Viewport */}
+        <div className="relative mt-5 w-full aspect-[3/4] bg-zinc-950 overflow-hidden flex items-center justify-center">
+          {!isComplete ? (
+            <>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover transition-opacity ${
+                  cameraState === "ready" ? "opacity-100" : "opacity-0"
+                }`}
+              />
+
+              {cameraState === "ready" && (
+                <ReadyCameraOverlay
+                  qualityBucket={qualityBucket}
+                  qualityText={qualityText}
+                  instruction={SCAN_VIEWS[activeStep].instruction}
+                />
+              )}
+
+              {cameraState !== "ready" && (
+                <CameraStateOverlay
+                  cameraState={cameraState}
+                  cameraMessage={cameraMessage}
+                  onRetry={() => {
+                    void startCamera();
+                  }}
+                />
+              )}
+            </>
+          ) : (
+            <ScanFinalizationState
+              totalSteps={SCAN_VIEWS.length}
+              status={finalizationStatus}
+              message={finalizationMessage}
+              progress={finalizationProgress}
+              onRetry={() => {
+                void finalizeScan();
+              }}
             />
+          )}
+        </div>
 
-            {cameraState === "ready" && (
-              <ReadyCameraOverlay
-                qualityBucket={qualityBucket}
-                qualityText={qualityText}
-                instruction={SCAN_VIEWS[activeStep].instruction}
-              />
-            )}
+        {/* Controls */}
+        <div className="p-10 w-full flex justify-center">
+          {!isComplete && (
+            <CaptureControl canCapture={canCapture} viewLabel={SCAN_VIEWS[activeStep].label} onCapture={handleCapture} />
+          )}
+        </div>
 
-            {cameraState !== "ready" && (
-              <CameraStateOverlay
-                cameraState={cameraState}
-                cameraMessage={cameraMessage}
-                onRetry={() => {
-                  void startCamera();
-                }}
-              />
-            )}
-          </>
-        ) : (
-          <ScanFinalizationState
-            totalSteps={SCAN_VIEWS.length}
-            status={finalizationStatus}
-            message={finalizationMessage}
-            onRetry={() => {
-              void finalizeScan();
-            }}
-          />
-        )}
+        <ThumbnailStrip views={SCAN_VIEWS} capturedImages={capturedImages} currentStep={currentStep} isComplete={isComplete} />
       </div>
-
-      {/* Controls */}
-      <div className="p-10 w-full flex justify-center">
-        {!isComplete && (
-          <CaptureControl canCapture={canCapture} viewLabel={SCAN_VIEWS[activeStep].label} onCapture={handleCapture} />
-        )}
-      </div>
-
-      <ThumbnailStrip views={SCAN_VIEWS} capturedImages={capturedImages} currentStep={currentStep} isComplete={isComplete} />
     </div>
   );
 }

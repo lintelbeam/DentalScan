@@ -50,7 +50,10 @@ If you want camera access from a public URL, you must serve the app over HTTPS w
     ```bash
     cp .env.https.example .env.https
     ```
-    Then set `APP_DOMAIN` to your DNS name (for example `scan.your-domain.com`).
+    Then set:
+    - `APP_DOMAIN` to your DNS name (for example `scan.your-domain.com`)
+    - `ANTHROPIC_API_KEY` for AI auto-replies in messaging
+    - Optional `ANTHROPIC_MODEL` (default is `claude-3-haiku-20240307`)
 
 2.  **Point DNS**:
     Create an `A` record for `APP_DOMAIN` to your server IP.

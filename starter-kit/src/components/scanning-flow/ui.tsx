@@ -1,5 +1,7 @@
 import React from "react";
+import Image from "next/image";
 import { Camera, CheckCircle2, RefreshCw } from "lucide-react";
+import logo from "@/assets/logo.webp";
 import { QUALITY_STYLES, getQualityLabel } from "./constants";
 import type { CameraState, QualityBucket, ScanView } from "./types";
 
@@ -13,11 +15,13 @@ export function ScanningHeader({
   totalSteps: number;
 }) {
   return (
-    <div className="p-4 w-full bg-zinc-900 border-b border-zinc-800 flex justify-between">
-      <h1 className="font-bold text-blue-400">DentalScan AI</h1>
-      <span className="text-xs text-zinc-500">
-        {isComplete ? "Scan Complete" : `Step ${currentStep + 1}/${totalSteps}`}
-      </span>
+    <div className="w-full bg-zinc-900 border-b border-zinc-800">
+      <div className="mx-auto flex w-full max-w-[1092px] items-center justify-between p-[10px]">
+        <Image src={logo} alt="DentalScan" className="h-[44px] w-auto" priority />
+        <span className="text-xs text-zinc-500">
+          {isComplete ? "Scan Complete" : `Step ${currentStep + 1}/${totalSteps}`}
+        </span>
+      </div>
     </div>
   );
 }
@@ -103,15 +107,19 @@ export function ScanFinalizationState({
   totalSteps,
   status,
   message,
+  progress,
   onRetry,
 }: {
   totalSteps: number;
-  status: "idle" | "submitting" | "success" | "error";
+  status: "idle" | "submitting" | "redirecting" | "success" | "error";
   message: string;
+  progress: number;
   onRetry: () => void;
 }) {
-  const isLoading = status === "submitting";
+  const isLoading = status === "submitting" || status === "redirecting";
   const isError = status === "error";
+  const clampedProgress = Math.max(0, Math.min(100, progress));
+  const showProgress = !isError;
 
   return (
     <div className="text-center p-10">
@@ -119,6 +127,17 @@ export function ScanFinalizationState({
       <h2 className="text-xl font-bold">Scan Complete</h2>
       <p className="text-zinc-400 mt-2">All {totalSteps} angles captured successfully.</p>
       <p className={`text-sm mt-3 ${isError ? "text-red-300" : "text-zinc-300"}`}>{message}</p>
+      {showProgress && (
+        <div className="mt-4">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800/90">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-sky-500 via-blue-400 to-emerald-400 transition-all duration-700 ease-out"
+              style={{ width: `${clampedProgress}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-400">{Math.round(clampedProgress)}%</p>
+        </div>
+      )}
       {(isLoading || isError) && (
         <div className="mt-4">
           {isLoading ? (
@@ -179,27 +198,33 @@ export function ThumbnailStrip({
   isComplete: boolean;
 }) {
   return (
-    <div className="flex gap-2 p-4 overflow-x-auto w-full" role="list" aria-label="Captured scan thumbnails">
-      {views.map((view, index) => (
-        <div
-          key={view.label}
-          role="listitem"
-          aria-current={!isComplete && index === currentStep ? "step" : undefined}
-          className={`w-16 h-20 rounded border-2 shrink-0 ${
-            !isComplete && index === currentStep ? "border-blue-500 bg-blue-500/10" : "border-zinc-800"
-          }`}
-          title={view.label}
-        >
-          {capturedImages[index] ? (
-            <img src={capturedImages[index]} alt={`${view.label} capture`} className="w-full h-full object-cover rounded" />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-[10px] text-zinc-600 px-1 text-center">
-              <span>{index + 1}</span>
-              <span className="mt-0.5">Pending</span>
-            </div>
-          )}
-        </div>
-      ))}
+    <div className="w-full overflow-x-auto">
+      <div
+        className="mx-auto flex w-max min-w-full justify-center gap-2 p-4"
+        role="list"
+        aria-label="Captured scan thumbnails"
+      >
+        {views.map((view, index) => (
+          <div
+            key={view.label}
+            role="listitem"
+            aria-current={!isComplete && index === currentStep ? "step" : undefined}
+            className={`w-16 h-20 rounded border-2 shrink-0 ${
+              !isComplete && index === currentStep ? "border-blue-500 bg-blue-500/10" : "border-zinc-800"
+            }`}
+            title={view.label}
+          >
+            {capturedImages[index] ? (
+              <img src={capturedImages[index]} alt={`${view.label} capture`} className="w-full h-full object-cover rounded" />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-[10px] text-zinc-600 px-1 text-center">
+                <span>{index + 1}</span>
+                <span className="mt-0.5">Pending</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
