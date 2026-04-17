@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { ScansFinalizeResponse } from "@/lib/api-contracts";
 import {
   GUIDE_CENTER_X,
   GUIDE_CENTER_Y,
@@ -366,14 +367,15 @@ export default function ScanningFlow() {
         }),
       });
 
-      const payload = (await response.json()) as { ok?: boolean; error?: string; scan?: { id?: string } };
+      const payload = (await response.json()) as ScansFinalizeResponse;
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error ?? "Unable to finalize scan");
+        const errorMessage = payload.ok === false ? payload.error : "Unable to finalize scan";
+        throw new Error(errorMessage);
       }
 
       setFinalizationStatus("success");
-      if (payload.scan?.id) {
+      if (payload.scan.id) {
         setFinalizationStatus("redirecting");
         setFinalizationMessage(`Scan finalized (${payload.scan.id}). Opening results...`);
         setFinalizationProgress(100);

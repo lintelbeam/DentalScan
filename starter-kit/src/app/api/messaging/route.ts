@@ -1,4 +1,13 @@
 import { NextResponse } from "next/server";
+import {
+  type DemoSender,
+  type MessageDto,
+  type MessagingHistoryResponse,
+  type MessagingSendRequest,
+  type MessagingSendResponse,
+  type ThreadSummaryDto,
+  toIsoString,
+} from "@/lib/api-contracts";
 import { DEMO_IDS, DEMO_SENDER_VALUES } from "@/lib/demo-constants";
 import { generateClinicReply } from "@/lib/anthropic-messaging";
 import { prisma } from "@/lib/prisma";
@@ -26,13 +35,52 @@ class HttpError extends Error {
   }
 }
 
+type ResolvedThread = {
+  id: string;
+  patientId: string;
+};
+
+type PersistedMessage = {
+  id: string;
+  threadId: string;
+  content: string;
+  sender: string;
+  createdAt: Date;
+};
+
+function normalizeSender(sender: string): DemoSender {
+  return sender === "dentist" ? "dentist" : "patient";
+}
+
+function toThreadSummaryDto(thread: {
+  id: string;
+  patientId: string;
+  updatedAt: Date;
+}): ThreadSummaryDto {
+  return {
+    id: thread.id,
+    patientId: thread.patientId,
+    updatedAt: toIsoString(thread.updatedAt),
+  };
+}
+
+function toMessageDto(message: PersistedMessage): MessageDto {
+  return {
+    id: message.id,
+    threadId: message.threadId,
+    content: message.content,
+    sender: normalizeSender(message.sender),
+    createdAt: toIsoString(message.createdAt),
+  };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const threadId = readOptionalString(searchParams.get("threadId"));
   const patientId = readOptionalString(searchParams.get("patientId"));
 
   if (!threadId && !patientId) {
-    return NextResponse.json(
+    return NextResponse.json<MessagingHistoryResponse>(
       { ok: false, error: "Provide either threadId or patientId" },
       { status: 400 }
     );
@@ -50,34 +98,31 @@ export async function GET(req: Request) {
       });
 
       if (!thread) {
-        return NextResponse.json({ ok: false, error: "Thread not found" }, { status: 404 });
+        return NextResponse.json<MessagingHistoryResponse>({ ok: false, error: "Thread not found" }, { status: 404 });
       }
 
       if (patientId && thread.patientId !== patientId) {
-        return NextResponse.json(
+        return NextResponse.json<MessagingHistoryResponse>(
           { ok: false, error: "threadId does not belong to the provided patientId" },
           { status: 409 }
         );
       }
 
-      return NextResponse.json({
+      return NextResponse.json<MessagingHistoryResponse>({
         ok: true,
-        thread: {
-          id: thread.id,
-          patientId: thread.patientId,
-          updatedAt: thread.updatedAt,
-        },
-        messages: thread.messages.map((message) => ({
-          id: message.id,
-          threadId: message.threadId,
-          content: message.content,
-          sender: message.sender,
-          createdAt: message.createdAt,
-        })),
+        thread: toThreadSummaryDto(thread),
+        messages: thread.messages.map(toMessageDto),
       });
     }
 
-    const resolvedPatientId = patientId as string;
+    if (!patientId) {
+      return NextResponse.json<MessagingHistoryResponse>(
+        { ok: false, error: "Provide either threadId or patientId" },
+        { status: 400 }
+      );
+    }
+
+    const resolvedPatientId = patientId;
     const thread = await prisma.thread.findFirst({
       where: { patientId: resolvedPatientId },
       orderBy: { updatedAt: "desc" },
@@ -89,41 +134,31 @@ export async function GET(req: Request) {
     });
 
     if (!thread) {
-      return NextResponse.json({
+      return NextResponse.json<MessagingHistoryResponse>({
         ok: true,
         thread: null,
         messages: [],
       });
     }
 
-    return NextResponse.json({
+    return NextResponse.json<MessagingHistoryResponse>({
       ok: true,
-      thread: {
-        id: thread.id,
-        patientId: thread.patientId,
-        updatedAt: thread.updatedAt,
-      },
-      messages: thread.messages.map((message) => ({
-        id: message.id,
-        threadId: message.threadId,
-        content: message.content,
-        sender: message.sender,
-        createdAt: message.createdAt,
-      })),
+      thread: toThreadSummaryDto(thread),
+      messages: thread.messages.map(toMessageDto),
     });
   } catch (err) {
     console.error("Messaging GET API Error:", err);
-    return NextResponse.json({ ok: false, error: "Failed to load message history" }, { status: 500 });
+    return NextResponse.json<MessagingHistoryResponse>({ ok: false, error: "Failed to load message history" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-  let body: Record<string, unknown>;
+  let body: MessagingSendRequest;
 
   try {
-    body = await readJsonRecord(req);
+    body = (await readJsonRecord(req)) as MessagingSendRequest;
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json<MessagingSendResponse>({ ok: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
   try {
@@ -131,21 +166,16 @@ export async function POST(req: Request) {
     const patientId = readOptionalString(body.patientId) ?? DEMO_IDS.patientId;
     const content = readOptionalString(body.content);
     const senderCandidate = readOptionalString(body.sender);
-    const sender = isAllowedValue(senderCandidate, DEMO_SENDER_VALUES)
+    const sender: DemoSender = isAllowedValue(senderCandidate, DEMO_SENDER_VALUES)
       ? senderCandidate
       : "patient";
 
     if (!content) {
-      return NextResponse.json({ ok: false, error: "content is required" }, { status: 400 });
+      return NextResponse.json<MessagingSendResponse>({ ok: false, error: "content is required" }, { status: 400 });
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      let resolvedThread:
-        | {
-            id: string;
-            patientId: string;
-          }
-        | null = null;
+      let resolvedThread: ResolvedThread | null = null;
       let threadCreated = false;
 
       if (threadId) {
@@ -228,15 +258,7 @@ export async function POST(req: Request) {
       return { message, thread: updatedThread, threadCreated };
     });
 
-    let assistantMessage:
-      | {
-          id: string;
-          threadId: string;
-          content: string;
-          sender: string;
-          createdAt: Date;
-        }
-      | null = null;
+    let assistantMessage: PersistedMessage | null = null;
 
     if (sender === "patient") {
       try {
@@ -275,36 +297,22 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json(
+    return NextResponse.json<MessagingSendResponse>(
       {
         ok: true,
         threadCreated: result.threadCreated,
-        thread: result.thread,
-        message: {
-          id: result.message.id,
-          threadId: result.message.threadId,
-          content: result.message.content,
-          sender: result.message.sender,
-          createdAt: result.message.createdAt,
-        },
-        assistantMessage: assistantMessage
-          ? {
-              id: assistantMessage.id,
-              threadId: assistantMessage.threadId,
-              content: assistantMessage.content,
-              sender: assistantMessage.sender,
-              createdAt: assistantMessage.createdAt,
-            }
-          : null,
+        thread: toThreadSummaryDto(result.thread),
+        message: toMessageDto(result.message),
+        assistantMessage: assistantMessage ? toMessageDto(assistantMessage) : null,
       },
       { status: 201 }
     );
   } catch (err) {
     if (err instanceof HttpError) {
-      return NextResponse.json({ ok: false, error: err.message }, { status: err.status });
+      return NextResponse.json<MessagingSendResponse>({ ok: false, error: err.message }, { status: err.status });
     }
 
     console.error("Messaging API Error:", err);
-    return NextResponse.json({ ok: false, error: "Failed to send message" }, { status: 500 });
+    return NextResponse.json<MessagingSendResponse>({ ok: false, error: "Failed to send message" }, { status: 500 });
   }
 }

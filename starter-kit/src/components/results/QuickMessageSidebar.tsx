@@ -2,36 +2,16 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, RefreshCw, SendHorizontal } from "lucide-react";
+import type {
+  MessageDto,
+  MessagingHistoryResponse,
+  MessagingSendResponse,
+  ThreadSummaryDto,
+} from "@/lib/api-contracts";
 import { DEMO_IDS } from "@/lib/demo-constants";
 
-type ThreadSummary = {
-  id: string;
-  patientId: string;
-  updatedAt: string;
-};
-
-type MessageItem = {
-  id: string;
-  threadId: string;
-  content: string;
-  sender: string;
-  createdAt: string;
+type MessageItem = MessageDto & {
   pending?: boolean;
-};
-
-type MessagingHistoryResponse = {
-  ok?: boolean;
-  error?: string;
-  thread?: ThreadSummary | null;
-  messages?: MessageItem[];
-};
-
-type MessagingSendResponse = {
-  ok?: boolean;
-  error?: string;
-  thread?: ThreadSummary;
-  message?: MessageItem;
-  assistantMessage?: MessageItem | null;
 };
 
 export default function QuickMessageSidebar({
@@ -41,7 +21,7 @@ export default function QuickMessageSidebar({
   patientId?: string;
   initialThreadId?: string;
 }) {
-  const [thread, setThread] = useState<ThreadSummary | null>(null);
+  const [thread, setThread] = useState<ThreadSummaryDto | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [draft, setDraft] = useState("");
   const [historyStatus, setHistoryStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -63,11 +43,12 @@ export default function QuickMessageSidebar({
       const payload = (await response.json()) as MessagingHistoryResponse;
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error ?? "Unable to load messages");
+        const errorMessage = payload.ok === false ? payload.error : "Unable to load messages";
+        throw new Error(errorMessage);
       }
 
-      setThread(payload.thread ?? null);
-      setMessages(payload.messages ?? []);
+      setThread(payload.thread);
+      setMessages(payload.messages);
       setHistoryStatus("ready");
     } catch (error) {
       setHistoryStatus("error");
@@ -124,13 +105,14 @@ export default function QuickMessageSidebar({
 
         const payload = (await response.json()) as MessagingSendResponse;
 
-        if (!response.ok || !payload.ok || !payload.message || !payload.thread) {
-          throw new Error(payload.error ?? "Failed to send message");
+        if (!response.ok || !payload.ok) {
+          const errorMessage = payload.ok === false ? payload.error : "Failed to send message";
+          throw new Error(errorMessage);
         }
 
         setThread(payload.thread);
         setMessages((prev) => {
-          const reconciled = prev.map((item) => (item.id === optimisticId ? payload.message! : item));
+          const reconciled = prev.map((item) => (item.id === optimisticId ? payload.message : item));
           if (!payload.assistantMessage) {
             return reconciled;
           }

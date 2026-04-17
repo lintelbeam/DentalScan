@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SCAN_STATUS_VALUES, type NotifyRequest, type NotifyResponse, toIsoString } from "@/lib/api-contracts";
 import { DEMO_IDS } from "@/lib/demo-constants";
 import { createCompletedNotification } from "@/lib/notification-service";
 import { prisma } from "@/lib/prisma";
@@ -13,13 +14,15 @@ import { isAllowedValue, readJsonRecord, readOptionalString } from "@/lib/reques
  * 3. Bonus: Handle potential errors (e.g., database connection issues).
  */
 
+const NOTIFICATION_DISPATCH_MODE = "simulated" as const;
+
 export async function POST(req: Request) {
-  let body: Record<string, unknown>;
+  let body: NotifyRequest;
 
   try {
-    body = await readJsonRecord(req);
+    body = (await readJsonRecord(req)) as NotifyRequest;
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json<NotifyResponse>({ ok: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
   try {
@@ -28,18 +31,18 @@ export async function POST(req: Request) {
     const userId = readOptionalString(body.userId) ?? readOptionalString(body.clinicUserId) ?? DEMO_IDS.clinicUserId;
 
     if (!scanId) {
-      return NextResponse.json({ ok: false, error: "scanId is required" }, { status: 400 });
+      return NextResponse.json<NotifyResponse>({ ok: false, error: "scanId is required" }, { status: 400 });
     }
 
-    if (!isAllowedValue(status, ["pending", "completed", "failed"] as const)) {
-      return NextResponse.json(
+    if (!isAllowedValue(status, SCAN_STATUS_VALUES)) {
+      return NextResponse.json<NotifyResponse>(
         { ok: false, error: "status must be one of: pending, completed, failed" },
         { status: 400 }
       );
     }
 
     if (status !== "completed") {
-      return NextResponse.json({
+      return NextResponse.json<NotifyResponse>({
         ok: true,
         skipped: true,
         reason: `Notification not created for status '${status}'`,
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
     });
 
     if (!existingScan) {
-      return NextResponse.json({ ok: false, error: "Scan not found" }, { status: 404 });
+      return NextResponse.json<NotifyResponse>({ ok: false, error: "Scan not found" }, { status: 404 });
     }
 
     const { notification, created } = await createCompletedNotification({
@@ -60,9 +63,10 @@ export async function POST(req: Request) {
       userId,
     });
 
-    console.log(`[STUB] Notification dispatch simulated for scan ${scanId}`);
+    // Intentional challenge scope: notification dispatch remains simulated only.
+    console.log(`[STUB] Notification dispatch ${NOTIFICATION_DISPATCH_MODE} for scan ${scanId}`);
 
-    return NextResponse.json({
+    return NextResponse.json<NotifyResponse>({
       ok: true,
       created,
       notification: {
@@ -71,11 +75,11 @@ export async function POST(req: Request) {
         title: notification.title,
         message: notification.message,
         read: notification.read,
-        createdAt: notification.createdAt,
+        createdAt: toIsoString(notification.createdAt),
       },
     }, { status: created ? 201 : 200 });
   } catch (err) {
     console.error("Notification API Error:", err);
-    return NextResponse.json({ ok: false, error: "Failed to create notification" }, { status: 500 });
+    return NextResponse.json<NotifyResponse>({ ok: false, error: "Failed to create notification" }, { status: 500 });
   }
 }

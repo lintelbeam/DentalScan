@@ -93,16 +93,6 @@ export function CameraStateOverlay({
   );
 }
 
-export function ScanCompleteState({ totalSteps }: { totalSteps: number }) {
-  return (
-    <div className="p-10 text-center">
-      <CheckCircle2 size={48} className="mx-auto mb-4 text-sky-500" />
-      <h2 className="text-xl font-bold text-slate-900">Scan Complete</h2>
-      <p className="mt-2 text-sm text-slate-500">All {totalSteps} angles captured successfully.</p>
-    </div>
-  );
-}
-
 export function ScanFinalizationState({
   totalSteps,
   status,
