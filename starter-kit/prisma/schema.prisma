@@ -3,14 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Scan {
   id        String   @id @default(cuid())
   status    String   @default("pending") // pending, completed, failed
-  images    String   @default("") // Comma-separated list of image URLs (SQLite doesn't support scalar lists)
+  images    String   @default("") // JSON-serialized list of image URLs
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

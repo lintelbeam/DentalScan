@@ -11,18 +11,24 @@ Follow these steps to get the project running in under 2 minutes:
     npm install
     ```
 
-2.  **Initialize Database**:
-    This project uses **SQLite** for ease of setup. Run the following command to create your local database and sync the schema:
+2.  **Configure Environment**:
     ```bash
-    npx prisma db push
+    cp .env.example .env
+    ```
+    Set `DATABASE_URL` to your Postgres connection string.
+
+3.  **Initialize Database**:
+    This project uses Prisma migrations. Run:
+    ```bash
+    npx prisma migrate deploy
     ```
 
-3.  **Run the Development Server**:
+4.  **Run the Development Server**:
     ```bash
     npm run dev
     ```
 
-4.  **Open the App**:
+5.  **Open the App**:
     Navigate to [http://localhost:3000](http://localhost:3000) to see the Scanning Flow in action.
 
 ## Docker Quick Start
@@ -41,6 +47,8 @@ If you prefer running everything in Docker from the repository root:
     ```bash
     docker compose down
     ```
+
+This compose setup includes a Postgres container and runs `prisma migrate deploy` before starting Next.js.
 
 ## Docker HTTPS (Required For Camera On Public URL)
 
@@ -78,12 +86,24 @@ If you want camera access from a public URL, you must serve the app over HTTPS w
 
 ## Project Notes
 
--   **Database**: The database is located at `prisma/dev.db`. You can explore it using `npx prisma studio`.
+-   **Database**: Uses Postgres via `DATABASE_URL`. You can inspect data with `npx prisma studio`.
 -   **Framework**: Built with Next.js 14 (App Router) and Tailwind CSS.
 -   **Structure**:
     -   `src/components/ScanningFlow.tsx`: The core capture component (Task 1).
     -   `src/app/api/notify/route.ts`: Notification logic (Task 2).
     -   `src/app/api/messaging/route.ts`: Messaging logic (Task 3).
+
+## Vercel Deployment Checklist
+
+1.  Set Vercel project root to `starter-kit`.
+2.  Add `DATABASE_URL` in Vercel Environment Variables (Production/Preview as needed).
+3.  Optional: add `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`.
+4.  Deploy. Build runs:
+    - `prisma generate`
+    - `prisma migrate deploy` (when `DATABASE_URL` is present)
+    - `next build`
+
+If `DATABASE_URL` is missing or invalid, API routes that write to DB (for example `/api/scans`) will fail.
 
 ## 🦷 Good Luck!
 We're excited to see your implementation. If you have any questions, feel free to reach out.

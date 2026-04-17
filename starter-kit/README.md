@@ -19,12 +19,14 @@ This repo contains a working DentalScan challenge implementation with scan captu
 
 - Node.js 18+
 - npm 9+
+- Postgres database (local or hosted)
 
 ### Run Locally
 
 ```bash
 npm install
-npx prisma db push
+cp .env.example .env
+npx prisma migrate deploy
 npm run dev
 ```
 
@@ -53,6 +55,8 @@ From repository root (`DentalScan/`):
 docker compose up --build
 ```
 
+This starts both app and Postgres.
+
 For HTTPS/domain setup (needed for camera on non-localhost), see [SETUP_GUIDE.md](./SETUP_GUIDE.md).
 
 ## Validation Commands
@@ -65,6 +69,21 @@ npm run lint
 npm run test
 npm run build
 ```
+
+`npm run build` runs:
+
+1. `prisma generate`
+2. `prisma migrate deploy` (when `DATABASE_URL` is set)
+3. `next build`
+
+This is required for Vercel to avoid stale Prisma Client and missing schema updates.
+
+## Vercel Deploy Notes
+
+- Set Vercel project root to `starter-kit`.
+- Add `DATABASE_URL` (hosted Postgres) in Vercel Environment Variables.
+- Optional: add `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` for clinic auto-replies.
+- Ensure the DB is reachable from Vercel and supports SSL if required by provider.
 
 ## API Endpoints
 
