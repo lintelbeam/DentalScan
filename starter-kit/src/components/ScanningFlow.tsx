@@ -20,6 +20,7 @@ import {
   ScanningHeader,
   ThumbnailStrip,
 } from "@/components/scanning-flow/ui";
+import { getStabilityAssessment } from "@/components/scanning-flow/stability";
 import type { CameraState, QualityBucket } from "@/components/scanning-flow/types";
 
 /**
@@ -187,22 +188,12 @@ export default function ScanningFlow() {
       const centerY = weightSum > 0 ? weightedY / weightSum : GUIDE_CENTER_Y;
       const centerOffset = Math.hypot(centerX - GUIDE_CENTER_X, centerY - GUIDE_CENTER_Y);
 
-      let nextBucket: QualityBucket = "good";
-      let nextText = "Great stability. Capture when ready.";
-
-      if (insideDetail < 14) {
-        nextBucket = "poor";
-        nextText = "Move closer so your teeth are clearer.";
-      } else if (centerOffset > 0.14 || outsideDetail > insideDetail * 1.2) {
-        nextBucket = "poor";
-        nextText = "Center your mouth inside the guide.";
-      } else if (motion > 18) {
-        nextBucket = "poor";
-        nextText = "Hold your phone steady for a moment.";
-      } else if (centerOffset > 0.09 || motion > 10 || insideDetail < 24) {
-        nextBucket = "fair";
-        nextText = "Almost there. Keep steady and centered.";
-      }
+      const { bucket: nextBucket, text: nextText } = getStabilityAssessment({
+        insideDetail,
+        outsideDetail,
+        centerOffset,
+        motion,
+      });
 
       syncQualityUi(nextBucket, nextText);
     },
