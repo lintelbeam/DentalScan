@@ -1,10 +1,6 @@
-# 🚀 Candidate Setup Guide
+# Setup Guide
 
-Welcome! This guide will help you get your local development environment ready for the DentalScan AI Engineering Challenge.
-
-## Quick Start
-
-Follow these steps to get the project running in under 2 minutes:
+Follow these steps to get the project running:
 
 1.  **Install Dependencies**:
     ```bash
@@ -104,6 +100,3 @@ If you want camera access from a public URL, you must serve the app over HTTPS w
     - `next build`
 
 If `DATABASE_URL` is missing or invalid, API routes that write to DB (for example `/api/scans`) will fail.
-
-## 🦷 Good Luck!
-We're excited to see your implementation. If you have any questions, feel free to reach out.
